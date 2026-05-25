@@ -1,2 +1,7 @@
-# Team's photos
-This directory contains 2 photos of the team.
+# Team
+
+Team name: Matrix
+Team: Iva Kocet, Marta Lučić, Eva Petranović
+Mentor: Nika Mateković
+
+Treba dodati dvije slike (official andfunny photo)
