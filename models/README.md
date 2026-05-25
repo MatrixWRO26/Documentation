@@ -1,0 +1,1 @@
+Opis modela za dokumentaciju
