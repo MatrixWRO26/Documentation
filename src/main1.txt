@@ -1,0 +1,189 @@
+import fischertechnik.factories as txt_factory          #dobar mainnnn
+import time
+import fischertechnik.factories as txt_factory
+from lib.controller import *
+import time
+from fischertechnik.controller.Motor import Motor
+from lib.controller import *
+ 
+txt_factory.init()
+txt_factory.init_input_factory()
+txt_factory.init_motor_factory()
+txt_factory.init_counter_factory()
+txt_factory.init_servomotor_factory()
+
+TXT_M = txt_factory.controller_factory.create_graphical_controller()
+TXT_M_I1_ultrasonic_distance_meter = txt_factory.input_factory.create_ultrasonic_distance_meter(TXT_M, 1)  #front L
+TXT_M_I2_ultrasonic_distance_meter = txt_factory.input_factory.create_ultrasonic_distance_meter(TXT_M, 2)  #front R
+TXT_M_I5_ultrasonic_distance_meter = txt_factory.input_factory.create_ultrasonic_distance_meter(TXT_M, 5)  #R
+TXT_M_I3_ultrasonic_distance_meter = txt_factory.input_factory.create_ultrasonic_distance_meter(TXT_M, 3)  #L
+TXT_M_M1_encodermotor = txt_factory.motor_factory.create_encodermotor(TXT_M, 1)
+TXT_M_S1_servomotor = txt_factory.servomotor_factory.create_servomotor(TXT_M, 1)
+TXT_M_C1_motor_step_counter = txt_factory.counter_factory.create_encodermotor_counter(TXT_M, 1)
+TXT_M_C1_motor_step_counter.set_motor(TXT_M_M1_encodermotor)
+txt_factory.initialized()
+
+
+
+def turn_right():
+   
+    print("Right turn for 90")
+    print(TXT_M_I5_ultrasonic_distance_meter.get_distance())
+    #TXT_M_M1_encodermotor.set_speed(150, TXT_M_M1_encodermotor.CCW)
+   
+    TXT_M_S1_servomotor.set_position(int(0))  # sharp right
+    time.sleep(0.9)
+        
+    TXT_M_S1_servomotor.set_position(int(265))  # wheels in neutral
+    time.sleep(0.2)
+    
+    while(TXT_M_I5_ultrasonic_distance_meter.get_distance()>75):
+        print('r',flush=True)
+        time.sleep(0.5)
+    time.sleep(1.5)
+    print("right_out",flush=True)
+       
+    
+def turn_left():
+   
+    print("Left turn for 90",flush=True)
+    print(TXT_M_I3_ultrasonic_distance_meter.get_distance())
+    #TXT_M_M1_encodermotor.set_speed(150, TXT_M_M1_encodermotor.CCW)
+
+    TXT_M_S1_servomotor.set_position(int(512))  # sharp left
+    time.sleep(1.1)
+        
+    TXT_M_S1_servomotor.set_position(int(256))  # wheels in neutral
+    time.sleep(0.2)
+ 
+    
+    while(TXT_M_I3_ultrasonic_distance_meter.get_distance()>200):
+       print('r',flush=True)
+       time.sleep(0.5)
+    time.sleep(1.5)
+   
+#function for wall following
+def follow_wall(counter):
+    TXT_M_S1_servomotor.set_position(int(256)) # wheels in neutral , 265
+    print("set1 " + str(TXT_M_S1_servomotor.get_position()))
+    time.sleep(0.2)
+    TXT_M_M1_encodermotor.set_speed(int(512), Motor.CCW)
+    TXT_M_M1_encodermotor.start()
+    print("The robot has started... " + str(TXT_M_S1_servomotor.get_position()))
+
+    left=5
+    time.sleep(0.1)
+
+    
+    while(True):
+        if TXT_M_I5_ultrasonic_distance_meter.get_distance()>100:
+            left=0
+            turn_right()
+            counter=1
+            break
+        if TXT_M_I3_ultrasonic_distance_meter.get_distance()>100:
+            print(str(TXT_M_I3_ultrasonic_distance_meter.get_distance()))
+            left=1
+            turn_left()
+            counter=1
+            break
+        #print(str(TXT_M_I3_ultrasonic_distance_meter.get_distance()) + str(TXT_M_I5_ultrasonic_distance_meter.get_distance()))
+
+    disR1 = TXT_M_I5_ultrasonic_distance_meter.get_distance()
+    disL1 = TXT_M_I3_ultrasonic_distance_meter.get_distance()
+    srvpos = TXT_M_S1_servomotor.get_position()
+    
+    while (counter<12): #12 turns for 3 laps
+  
+        print(str(TXT_M_S1_servomotor.get_position()) + ' left sensor: ', TXT_M_I3_ultrasonic_distance_meter.get_distance(), 'front sensor: ', TXT_M_I1_ultrasonic_distance_meter.get_distance(), ' right sensor: ', TXT_M_I5_ultrasonic_distance_meter.get_distance(), flush = True)
+
+
+
+        if(left == 0): # following the right wall
+            if TXT_M_I5_ultrasonic_distance_meter.get_distance() > 100: # corner detection
+                turn_right()
+                counter = counter + 1
+            
+            if TXT_M_I5_ultrasonic_distance_meter.get_distance() < 15:           # too close
+                #srvpos = srvpos + 5
+                #TXT_M_S1_servomotor.set_position(int(srvpos))
+                #print("+10")
+
+                TXT_M_S1_servomotor.set_position(int(280)) # a bit to the left. 280
+                time.sleep(0.8) #0.4 
+                TXT_M_S1_servomotor.set_position(int(256))  # a bit to the left,256
+                time.sleep(0.3)
+            if TXT_M_I5_ultrasonic_distance_meter.get_distance() > 50:           # too far
+                #srvpos = srvpos - 5
+                #TXT_M_S1_servomotor.set_position(int(srvpos))
+                #print("-10")
+
+                time.sleep(0.3)
+                TXT_M_S1_servomotor.set_position(int(256))  # a bit to the left, 256
+                time.sleep(0.3)
+            else:
+                TXT_M_S1_servomotor.set_position(int(256)) # straight, 256
+                time.sleep(0.3) 
+            
+            if(TXT_M_I1_ultrasonic_distance_meter.get_distance()<10): #bilo je 10
+                 print ('zid')
+                 TXT_M_S1_servomotor.set_position(int(270))
+                 time.sleep(0.1)
+                 TXT_M_M1_encodermotor.set_speed(int(200), Motor.CW)
+                 TXT_M_M1_encodermotor.start()
+                 time.sleep(0.75)
+                 TXT_M_M1_encodermotor.set_speed(int(200), Motor.CCW)
+                 TXT_M_M1_encodermotor.start()
+                 TXT_M_S1_servomotor.set_position(int(100))
+                 time.sleep(0.25)
+                 TXT_M_M1_encodermotor.set_speed(int(512), Motor.CCW)
+
+
+        if(left==1): # following the left wall
+            
+            if TXT_M_I3_ultrasonic_distance_meter.get_distance() > 100:
+                #TXT_M_S1_servomotor.set_position(int(150))
+                #ime.sleep(0.15)
+                turn_left()
+                counter = counter + 1
+               
+            if TXT_M_I3_ultrasonic_distance_meter.get_distance() <15:  # too close
+                TXT_M_S1_servomotor.set_position(int(150))  # a bit to the right
+                time.sleep(0.15)
+                TXT_M_S1_servomotor.set_position(int(150))  # a bit to the left
+                time.sleep(0.1)
+
+            elif TXT_M_I3_ultrasonic_distance_meter.get_distance() > 50:  # too far
+                TXT_M_S1_servomotor.set_position(int(300))  # a bit to the left
+                time.sleep(0.15)
+                TXT_M_S1_servomotor.set_position(int(256))  # a bit to the left
+                time.sleep(0.05)
+
+            else:
+                TXT_M_S1_servomotor.set_position(int(256))  # straight
+                time.sleep(0.1)
+            
+            if(TXT_M_I1_ultrasonic_distance_meter.get_distance()<10): #10
+                 print('zid')
+                 TXT_M_S1_servomotor.set_position(int(270))
+                 time.sleep(0.1) 
+                 TXT_M_M1_encodermotor.set_speed(int(200), Motor.CW)
+                 TXT_M_M1_encodermotor.start()
+                 time.sleep(0.75)
+                 TXT_M_M1_encodermotor.set_speed(int(200), Motor.CCW)
+                 TXT_M_M1_encodermotor.start()
+                 TXT_M_S1_servomotor.set_position(int(350))
+                 time.sleep(0.25)
+                 TXT_M_M1_encodermotor.set_speed(int(512), Motor.CCW)
+                 
+
+    time.sleep(1)
+    TXT_M_M1_encodermotor.stop()
+
+# main program
+if __name__ == '__main__':
+
+    counter = 0
+    print("main",flush=True)
+
+    follow_wall(counter)
